@@ -16,24 +16,17 @@ function stream_one(param, next){
 	var time = Date.now();
 	var counter = 0;
 	var rs = fs.createReadStream('./data/KEN_ALL.CSV');
-	// var ls = new Spipe.lineStream({encode:'shift_jis'});
 	var as = new Sample.AssertStream({listup:[]},{},function (stream, chunk, enc ,cb){
-		// console.log(chunk.toString("shift_jis"));
 		chunk = iconv.decode(chunk, "shift_jis");
 		chunk = stream._cache + chunk;
 		chunk = chunk.split(/\r\n/);
 		this._cache = chunk.pop();
-		// 
 		chunk.forEach(function (d) {
 			if(/広島県/.test(d)) stream.listup.push(d);
 		})
-		
-		// console.log(chunk)
 		counter++;
 		cb();
 	},function(stream){
-		// console.timeEnd("post.csv")
-		// console.log(counter,stream.listup.length)
 		next(null, {
 			memory:process.memoryUsage(), 
 			time:Date.now() - time,
@@ -111,8 +104,10 @@ function stream_multi(para, next){
 	var counter = 0;
 	var rs = fs.createReadStream('./data/KEN_ALL.CSV');
 	var ls = new Spipe.lineStream({encode:'shift_jis'});
-	var as = new Spipe.AssertStream({
+	var as = new Sample.AssertStream({
 		listup:[]
+	},{
+		objectMode:true
 	},function (stream, chunk, enc ,cb){
 		if(/広島県/.test(chunk)) stream.listup.push(chunk);
 		counter++;

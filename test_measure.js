@@ -6,7 +6,7 @@ if(cluster.isMaster) {
 	var genCounter = 0
 	var tasks = [];
 	var result = [];
-	var loop = 20
+	var loop = 10
 	tasks.push(["onmemory",1,loop])
 	tasks.push(["stream_addpass",10,loop])
 	tasks.push(["stream_addpass",100,loop])
