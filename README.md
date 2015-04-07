@@ -40,7 +40,7 @@ nodejsないでの実装としてはNet,httpなどのモジュールが
 Streamは5種類ありますが内使うのはだいたい3種類で足りると思うのでここでは3種類の解説します。
 
 |stream type|だいたいの用途|
-|:-|:-|
+|:--|:--|
 |Readable|ストリームの始点|
 |Writable|ストリームの終点|
 |Duplex|(よく知らない)|
@@ -323,7 +323,7 @@ var as = new AssertStream({},{},
 以下、実行結果(環境:MBA 11-inch Mid2011)
 
 |type|latest memory(rss)|timeavg|stream call count|pickup result|
-|:-||||
+|:---|:---|:---|:---|:---|
 |全文memory上で処理|291MB|349ms|1|2160|
 |CreateStreamから直で処理+PassThorugh*10|65MB|285ms|187|2160|
 |CreateStreamから直で処理+PassThorugh*100|69MB|316ms|187|2160|
