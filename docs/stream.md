@@ -10,3 +10,14 @@ BufferlistはObjectCheinになっており、head->tailとその間が.nextで�
 https://github.com/nodejs/node/commit/686984696de00ce09ac1d56e997cf705ecb6377d
 
 というわけでPriorityQueueをするためには別の工夫が必要
+
+
+## Stream WritableのBuffer 構造
+
+chainしてあるのでsortは難しそう
+
+
+this._writableState.lastBufferdRequest
+
+state.bufferdRequestCount
+state.bufferdRequest : head
