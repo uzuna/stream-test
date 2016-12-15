@@ -3,21 +3,27 @@
 const aa = require('aa')
 const au = require('aa-util')
 const stream = require('stream')
+
+const BufferList = require('../lib/buffer_list')
+const BufferQueueList = require('../lib/buffer_queue_list')
 const expect = require('chai').expect
 
-describe("chunk sort", function(){
-	it('in readable', function(){
+describe("priority buffer list", function(){
+	//
+	// Customized Readable stream out buffer list
+	//
+	it('buffer queue list', function(){
 		return aa(main())
 		function *main(){
-			const que = new BufferListQueue()
+			const que = new BufferQueueList()
 			expect(que.head).to.be.null
 			expect(que.tail).to.be.null
 
-			let g = range(0,10)
+			let g = range_random(0,10)
 			const src = au.stream.g2s(g())
 			const rows = yield au.stream.reduce(src);
 			for(let i of rows){
-				que.push({priority:i, value: i})
+				que.push(i)
 			}
 			
 			// Check insert chekcc by proprity
@@ -38,6 +44,39 @@ describe("chunk sort", function(){
 			}
 		}
 	})
+
+	//
+	//
+	//
+	it('built in stream', function(){
+		return aa(main())
+		function *main(){
+			let g = range_random(0,10)
+			const src = au.stream.g2s(g())
+			const corked = get_corked({objectMode:true, highWaterMark:1})
+			src._readableState.buffer = new BufferQueueList()
+			// for debug origin
+			// src._readableState.buffer = new BufferList()
+			expect(src._readableState.buffer).to.be.an.instanceof(BufferQueueList)
+
+			const latest = au.stream.pipe([src, corked]);
+			
+			// wait output to src buffer
+			setTimeout(()=>{
+				corked.uncork()
+			},10)
+
+			const rows = yield au.stream.reduce(latest);
+			expect(rows).to.have.length.gte(10)
+			
+			// remove first packet(not sort target)
+			rows.shift()
+			rows.reduce((a, b)=>{
+				expect(a.priority).to.be.lte(b.priority)
+				return b;
+			})
+		}
+	})
 })
 
 //
@@ -51,105 +90,17 @@ function range(start, end){
 	}
 }
 
-//
-// Buffer Query
-//
-class BufferListQueue{
-	constructor(){
-		this._stack = []
-		// this.head = null;
-		// this.tail = null;
-		// this.length = 0;
-	}
-	get head(){
-		if(this._stack.length > 0)
-			return this._stack[0]
-		return null
-	}
-	get tail(){
-		if(this._stack.length > 0)
-			return this._stack[this._stack.length - 1] 
-		return null
-	}
-	get length(){
-		return this._stack.length;
-	}
-
-	push(v){
-		if(!("priority" in v))
-			v.priority = 5
-
-		const priority = v.priority
-		if(this.head === null){
-			this._stack.push(v);
-			return 
-		}
-
-		if(this.head.priority > priority){
-			this._stack.unshift(v);
-			return 
-		}
-
-		if(this.tail.priority <= priority){
-			this._stack.push(v);
-			return 
-		}
-		this._stack = search_loop(this._stack, v)
-	}
-
-	shift(){
-		return this._stack.shift()
-	}
-}
-
-function search_loop(list, v){
-	const index = v.priority
-	const length = list.length - 1;
-	const th_seq = 2
-	let range = {min: 0, max: length}
-	let pos = length
-	while(true){
-		let rs = check(pos)
-		// console.log(rs);
-		if(rs[0]){
-			return rs[1]
-		}
-		pos = rs[1]
-	}
-
-	function check(oldpos){
-		if(list[oldpos].priority <= index){
-			range.min = oldpos
-			const diff = (range.max - oldpos) / 2
-			const nindex = oldpos + diff
-			const npos = Math.floor(nindex)
-			if(diff < th_seq) {
-				return [true, sequence(npos)]
-			}
-			return [false, npos]
-		}
-		if(list[oldpos].priority > index){
-			range.max = oldpos
-			const diff = (oldpos - range.min) / 2;
-			const nindex = oldpos - diff
-			const npos = Math.floor(nindex)
-			if(diff < th_seq) {	
-				return [true, sequence(npos)]
-			}
-			return [false, npos]
-		}
-		return 
-	}
-
-	function sequence(oldpos){
-		while(true){
-			if(list[oldpos].priority > index){
-				list = list.slice(0, oldpos)
-					.concat([v])
-					.concat(list.slice(oldpos))
-				return list
-			}
-			oldpos++
+function range_random(start, end){
+	return function*(){
+		for(let i = start; i<=end ;i++){
+			yield {priority: Math.floor(Math.random() * 10), value:i}
 		}
 	}
 }
+
+function get_corked(opt){
+	let ts = stream.PassThrough(opt)
+	ts.cork()
+	return ts;
+}
+
