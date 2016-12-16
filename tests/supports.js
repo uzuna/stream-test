@@ -5,10 +5,17 @@
 // Generate iterator
 //
 module.exports.range = range
-function range(start, end){
+function range(start, end, step=1){
 	return function*(){
-		for(let i = start; i<=end ;i++){
-			yield i
+		if(start > end){
+			for(let i = start; i>=end ;i += step){
+				yield i
+			}
+		}
+		else{
+			for(let i = start; i<=end ;i += step){
+				yield i
+			}
 		}
 	}
 }
